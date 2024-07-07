@@ -6,7 +6,8 @@ fusepy
 ipywidgets>=7.5
 multiprocess
 requests
-requests-unixsocket
+requests-unixsocket2
 sh
 simple-httpfs>=0.4.2
 slugid>=2.0.0
+dill
