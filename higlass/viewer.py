@@ -116,6 +116,7 @@ def display(
     fuse=True,
     auth_token=None,
     proxy_base=None,
+    wrapper_script='/Local/md_kaplan/anaconda3/envs/higlass/bin/higlass-wrapper.py',
 ):
     """
     Instantiate a HiGlass display with the given views.
@@ -179,6 +180,7 @@ def display(
         fuse=fuse,
         log_level=log_level,
         root_api_address=proxy_base,
+        wrapper_script=wrapper_script,
     )
     server.start()
 

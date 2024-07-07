@@ -384,6 +384,7 @@ class Server:
         log_level=logging.INFO,
         log_file=None,
         root_api_address=None,
+        wrapper_script=None,
     ):
         self.name = name or __name__.split(".")[0] + "-" + slugid.nice()[:8]
         self.tilesets = tilesets
@@ -394,6 +395,7 @@ class Server:
             self.fuse_process.setup()
         else:
             self.fuse_process = None
+        self._start_wrapper = wrapper_script
 
         self.app = create_app(self.name, self.tilesets, fuse=self.fuse_process)
         if log_file:
@@ -451,15 +453,30 @@ class Server:
         # lost
         uuid = slugid.nice()
 
-        target = partial(
-            self.app.run,
-            debug=debug,
-            host=self.host,
-            port=self.port,
-            threaded=True,
-            use_reloader=False,
-            **kwargs
-        )
+        if self._start_wrapper:
+            def exec_wrapper():
+                import dill
+                import sys
+                import os
+                r, w = os.pipe()
+                dilled = dill.dumps(self)
+                os.write(w, dilled)
+                os.close(w)
+                os.dup2(r, 0)
+                os.close(r)
+                os.execl(self._start_wrapper, self._start_wrapper)
+
+            target = partial(exec_wrapper)
+        else:
+            target = partial(
+                self.app.run,
+                debug=debug,
+                host=self.host,
+                port=self.port,
+                threaded=True,
+                use_reloader=False,
+                **kwargs
+            )
         atexit.register(self._unix_cleanup)
         self.processes[uuid] = mp.Process(target=target)
         self.processes[uuid].start()
